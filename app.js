@@ -5,14 +5,19 @@ function initializeApp() {
     const formatButtons = document.querySelectorAll('.format-btn');
 
     numberInput.addEventListener('input', updateVisualization);
-    
+
+    // Remove 64-bit button event listeners and force 32-bit mode
     formatButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            formatButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentFormat = parseInt(btn.dataset.format);
-            updateVisualization();
-        });
+        if (btn.dataset.format === "32") {
+            btn.addEventListener('click', () => {
+                formatButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFormat = 32;
+                updateVisualization();
+            });
+        } else {
+            btn.style.display = "none"; // Hide 64-bit button
+        }
     });
 
     updateVisualization();
@@ -32,28 +37,19 @@ function updateVisualization() {
 
     if (special !== null) {
         const visualization = document.getElementById('visualization');
-        if (currentFormat === 32) {
-            visualization.innerHTML = generateFloat32Visualization(special, inputValue);
-        } else {
-            visualization.innerHTML = generateFloat64Visualization(special, inputValue);
-        }
+        visualization.innerHTML = generateFloat32Visualization(special, inputValue);
         return;
     }
 
     const binaryString = inputValue.replace(/[^01.]/g, '');
     if (!binaryString || !isValidBinary(binaryString)) {
-        document.getElementById('visualization').innerHTML = '<div class="calc-section"><div class="calc-title">Please enter a valid binary number (0s, 1s, and optionally one decimal point), or type "inf", "-inf", or "nan"</div></div>';
+        document.getElementById('visualization').innerHTML = '<div class="calc-section"><div class="calc-title">Please enter a valid binary number (0s, 1s, decimal point), or type "inf", "-inf", or "nan"</div></div>';
         return;
     }
     
     const number = binaryToDecimal(binaryString);
     const visualization = document.getElementById('visualization');
-    
-    if (currentFormat === 32) {
-        visualization.innerHTML = generateFloat32Visualization(number, binaryString);
-    } else {
-        visualization.innerHTML = generateFloat64Visualization(number, binaryString);
-    }
+    visualization.innerHTML = generateFloat32Visualization(number, binaryString);
 }
 
 function isValidBinary(str) {
@@ -181,104 +177,7 @@ function generateFloat32Visualization(number, binaryInput) {
     `;
 }
 
-function generateFloat64Visualization(number, binaryInput) {
-    const buffer = new ArrayBuffer(8);
-    const view = new DataView(buffer);
-    view.setFloat64(0, number);
-    
-    const high32 = view.getUint32(0);
-    const low32 = view.getUint32(4);
-    
-    const sign = (high32 >>> 31) & 1;
-    const exponent = (high32 >>> 20) & 0x7FF;
-    const mantissaHigh = high32 & 0xFFFFF;
-    const mantissaLow = low32;
-    
-    const signBit = sign.toString();
-    const exponentBits = exponent.toString(2).padStart(11, '0');
-    const mantissaHighBits = mantissaHigh.toString(2).padStart(20, '0');
-    const mantissaLowBits = mantissaLow.toString(2).padStart(32, '0');
-    const mantissaBits = mantissaHighBits + mantissaLowBits;
-    
-    const biasedExponent = exponent;
-    const actualExponent = exponent - 1023;
-    const mantissaValue = 1 + (mantissaHigh * Math.pow(2, 32) + mantissaLow) / Math.pow(2, 52);
-    
-    // Create bit labels (63 down to 0)
-    const bitLabels = Array.from({length: 64}, (_, i) => 63 - i);
-    
-    return `
-        <div class="ieee-representation">
-            <h3 style="text-align: center; margin-bottom: 20px;">64-bit IEEE 754 Representation</h3>
-            
-            <div style="margin-bottom: 20px;">
-                <div style="text-align: center; margin-bottom: 10px;">
-                    <strong>Input Binary Integer:</strong> ${binaryInput} = ${number} (decimal)
-                </div>
-            </div>
-            
-            <div class="bit-labels">
-                ${bitLabels.map(label => `<div class="bit-label" style="font-size: 8px;">${label}</div>`).join('')}
-            </div>
-            
-            <div class="bit-display">
-                <div class="bit sign-bit">${signBit}</div>
-                ${exponentBits.split('').map(bit => `<div class="bit exponent-bit">${bit}</div>`).join('')}
-                ${mantissaBits.split('').map(bit => `<div class="bit mantissa-bit">${bit}</div>`).join('')}
-            </div>
-            
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color sign-bit"></div>
-                    <span>Sign (1 bit)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color exponent-bit"></div>
-                    <span>Exponent (11 bits)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color mantissa-bit"></div>
-                    <span>Mantissa (52 bits)</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="calculations">
-            <div class="calc-section">
-                <div class="calc-title">Binary to Decimal Conversion</div>
-                <div class="calc-step">Binary input: ${binaryInput}</div>
-                ${generateBinaryConversionSteps(binaryInput)}
-                <div class="calc-step"><strong>Decimal value: ${number}</strong></div>
-                <div class="calc-step">Converted to IEEE 754 double</div>
-            </div>
-        
-            <div class="calc-section">
-                <div class="calc-title">Sign Calculation</div>
-                <div class="calc-step">Sign bit: ${sign}</div>
-                <div class="calc-step">Sign: ${sign === 0 ? 'Positive (+)' : 'Negative (-)'}</div>
-            </div>
-            
-            <div class="calc-section">
-                <div class="calc-title">Exponent Calculation</div>
-                <div class="calc-step">Exponent bits: ${exponentBits}</div>
-                <div class="calc-step">Biased exponent: ${biasedExponent}</div>
-                <div class="calc-step">Bias: 1023</div>
-                <div class="calc-step">Actual exponent: ${biasedExponent} - 1023 = ${actualExponent}</div>
-            </div>
-            
-            <div class="calc-section">
-                <div class="calc-title">Mantissa Calculation</div>
-                <div class="calc-step">Mantissa bits: ${mantissaBits.substring(0, 20)}...</div>
-                <div class="calc-step">Normalized: 1 + mantissa/2⁵²</div>
-                <div class="calc-step">Value: ${mantissaValue.toFixed(15)}</div>
-            </div>
-        </div>
-        
-        <div class="result">
-            Final IEEE 754 Value: ${sign === 0 ? '+' : '-'} ${mantissaValue.toFixed(15)} × 2^${actualExponent} = ${view.getFloat64(0)}
-        </div>
-    `;
-}
+// Removed generateFloat64Visualization
 
 function generateBinaryConversionSteps(binaryStr) {
     if (!binaryStr.includes('.')) {
