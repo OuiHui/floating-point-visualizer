@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+    <title>IEEE 754 Floating Point Visualizer</title>
+    
+</head>
+<body>
+    <div class="container">
+        <h1>IEEE 754 Floating Point Visualizer</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="numberInput">Enter Binary:</label>
+                <input type="text" id="numberInput" placeholder="e.g., 100.001 or 1100011000000" value="100.001" pattern="[01.]*">
+            </div>
+            <div class="format-selector">
+                <button class="format-btn active" data-format="32">32-bit (Single)</button>
+                <button class="format-btn" data-format="64">64-bit (Double)</button>
+            </div>
+        </div>
+
+        <div class="visualization" id="visualization"></div>
+    </div>
+</body>
+</html>
