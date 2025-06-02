@@ -158,12 +158,12 @@ input:focus {
 }
 
 .exponent-bit {
-    background: #38a169;
+    background: #04ca36;
     color: white;
 }
 
 .mantissa-bit {
-    background: #3182ce;
+    background: #077eee;
     color: white;
 }
 
@@ -202,7 +202,7 @@ input:focus {
 }
 
 .result {
-    background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
+    background: linear-gradient(90deg, #f50404 0%, #185a9d 100%);
     color: white;
     padding: 15px;
     border-radius: 10px;
