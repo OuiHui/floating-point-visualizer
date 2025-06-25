@@ -1,18 +1,23 @@
 <template>
   <div class="container">
-    <h1>IEEE 754 Floating Point Visualizer</h1>
+    <h1>
+      IEEE 754 Floating Point Visualizer
+      <span class="gt-badge">GT</span>
+    </h1>
     
     <div class="input-section">
       <div class="input-group">
-        <label for="numberInput">Enter Binary:</label>
-        <input 
-          type="text" 
-          id="numberInput" 
-          v-model="inputValue"
-          placeholder="e.g., 100.001 or 1100011000000"
-          pattern="[01.]*"
-          @input="updateVisualization"
-        >
+        <div class="input-label">
+          <label for="numberInput">Binary Input</label>
+          <input 
+            type="text" 
+            id="numberInput" 
+            v-model="inputValue"
+            placeholder="e.g., 100.001, inf, -inf, nan"
+            pattern="[01.]*"
+            @input="updateVisualization"
+          >
+        </div>
       </div>
     </div>
 
@@ -167,11 +172,11 @@ export default {
       
       return `
         <div class="ieee-representation">
-          <h3 style="text-align: center; margin-bottom: 20px;">32-bit IEEE 754 Representation</h3>
+          <h3>32-bit IEEE 754 Binary Representation</h3>
           
-          <div style="margin-bottom: 20px;">
-            <div style="text-align: center; margin-bottom: 10px;">
-              <strong>Input Binary Integer:</strong> ${binaryInput} = ${number} (decimal)
+          <div style="margin-bottom: 24px; text-align: center;">
+            <div style="font-size: 1.1rem; color: var(--gt-light-gold); margin-bottom: 8px;">
+              <strong>Input:</strong> ${binaryInput} → <strong>Decimal:</strong> ${number}
             </div>
           </div>
           
@@ -180,9 +185,9 @@ export default {
           </div>
           
           <div class="bit-display">
-            <div class="bit sign-bit">${signBit}</div>
-            ${exponentBits.split('').map(bit => `<div class="bit exponent-bit">${bit}</div>`).join('')}
-            ${mantissaBits.split('').map(bit => `<div class="bit mantissa-bit">${bit}</div>`).join('')}
+            <div class="bit sign-bit" title="Sign Bit: ${sign === 0 ? 'Positive' : 'Negative'}">${signBit}</div>
+            ${exponentBits.split('').map((bit, index) => `<div class="bit exponent-bit" title="Exponent Bit ${7-index}">${bit}</div>`).join('')}
+            ${mantissaBits.split('').map((bit, index) => `<div class="bit mantissa-bit" title="Mantissa Bit ${22-index}">${bit}</div>`).join('')}
           </div>
           
           <div class="legend">
@@ -203,37 +208,28 @@ export default {
         
         <div class="calculations">
           <div class="calc-section">
-            <div class="calc-title">Binary to Decimal Conversion</div>
-            <div class="calc-step">Binary input: ${binaryInput}</div>
-            ${generateBinaryConversionSteps(binaryInput)}
-            <div class="calc-step"><strong>Decimal value: ${number}</strong></div>
-          </div>
-        
-          <div class="calc-section">
-            <div class="calc-title">Sign Calculation</div>
-            <div class="calc-step">Sign bit: ${sign}</div>
-            <div class="calc-step">Sign: ${sign === 0 ? 'Positive (+)' : 'Negative (-)'}</div>
+            <div class="calc-title">Sign Analysis</div>
+            <div class="calc-step">Bit: ${sign}</div>
+            <div class="calc-step">Value: ${sign === 0 ? 'Positive (+)' : 'Negative (-)'}</div>
           </div>
           
           <div class="calc-section">
-            <div class="calc-title">Exponent Calculation</div>
-            <div class="calc-step">Exponent bits: ${exponentBits}</div>
-            <div class="calc-step">Biased exponent: ${biasedExponent}</div>
-            <div class="calc-step">Bias: 127</div>
-            <div class="calc-step">Actual exponent: ${biasedExponent} - 127 = ${actualExponent}</div>
+            <div class="calc-title">Exponent Analysis</div>
+            <div class="calc-step">Bits: ${exponentBits}</div>
+            <div class="calc-step">Biased: ${biasedExponent}</div>
+            <div class="calc-step">Actual: ${biasedExponent} - 127 = ${actualExponent}</div>
           </div>
           
           <div class="calc-section">
-            <div class="calc-title">Mantissa Calculation</div>
-            <div class="calc-step">Mantissa bits: ${mantissaBits}</div>
-            <div class="calc-step">Mantissa decimal: ${mantissa}</div>
-            <div class="calc-step">Normalized: 1 + ${mantissa}/2²³</div>
-            <div class="calc-step">Value: ${mantissaValue.toFixed(10)}</div>
+            <div class="calc-title">Mantissa Analysis</div>
+            <div class="calc-step">Bits: ${mantissaBits}</div>
+            <div class="calc-step">Value: 1 + ${mantissa}/2²³</div>
+            <div class="calc-step">Result: ${mantissaValue.toFixed(10)}</div>
           </div>
         </div>
         
         <div class="result">
-          Final IEEE 754 Value: ${sign === 0 ? '+' : '-'} ${mantissaValue.toFixed(10)} × 2^${actualExponent} = ${view.getFloat32(0)}
+          IEEE 754 Result: ${sign === 0 ? '+' : '-'} ${mantissaValue.toFixed(10)} × 2^${actualExponent} = ${view.getFloat32(0)}
         </div>
       `
     }
@@ -248,7 +244,15 @@ export default {
 
       const binaryString = inputValue.value.replace(/[^01.]/g, '')
       if (!binaryString || !isValidBinary(binaryString)) {
-        visualizationHtml.value = '<div class="calc-section"><div class="calc-title">Please enter a valid binary number (0s, 1s, decimal point), or type "inf", "-inf", or "nan"</div></div>'
+        visualizationHtml.value = `
+          <div class="calc-section" style="text-align: center; background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.1)); border: 1px solid rgba(220, 38, 38, 0.3);">
+            <div class="calc-title" style="color: #FCA5A5;">⚠ Invalid Input</div>
+            <div style="color: var(--text-secondary); margin-top: 12px;">
+              Please enter a valid binary number (0s, 1s, decimal point)<br>
+              or special values: <code style="color: var(--gt-gold);">inf</code>, <code style="color: var(--gt-gold);">-inf</code>, <code style="color: var(--gt-gold);">nan</code>
+            </div>
+          </div>
+        `
         return
       }
       
