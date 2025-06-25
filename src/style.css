@@ -139,7 +139,7 @@ h1 .gt-badge {
 .input-group {
     display: flex;
     gap: 20px;
-    align-items: center;
+    align-items: flex-end;
     flex-wrap: wrap;
 }
 
@@ -474,22 +474,197 @@ input::placeholder {
     font-size: 0.9rem;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--gt-dark-navy);
-}
-
-::-webkit-scrollbar-thumb {
+/* Help button and popup styles */
+.help-btn {
     background: var(--gt-gold);
-    border-radius: 4px;
+    color: var(--gt-navy);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 8px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.help-btn:hover {
     background: var(--gt-light-gold);
+    transform: scale(1.1);
+}
+
+.help-popup {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0;
+    margin-top: 16px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.help-header {
+    background: linear-gradient(135deg, var(--gt-navy), var(--gt-dark-navy));
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-header h4 {
+    color: var(--gt-light-gold);
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--gt-light-gold);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--gt-gold);
+}
+
+.help-content {
+    padding: 20px;
+}
+
+.help-section {
+    margin-bottom: 20px;
+}
+
+.help-section:last-of-type {
+    margin-bottom: 16px;
+}
+
+.help-section h5 {
+    color: var(--gt-gold);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.help-section h5::before {
+    content: '▶';
+    font-size: 0.8em;
+    color: var(--gt-light-gold);
+}
+
+.help-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.help-section li {
+    padding: 6px 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-section li::before {
+    content: '•';
+    color: var(--gt-gold);
+    font-weight: bold;
+}
+
+.help-section code {
+    background: rgba(0, 48, 87, 0.4);
+    color: var(--gt-light-gold);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    border: 1px solid var(--border-color);
+}
+
+.help-note {
+    background: rgba(179, 163, 105, 0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.help-note strong {
+    color: var(--gt-gold);
+}
+
+/* Mode toggle styles */
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+    background: rgba(0, 48, 87, 0.4);
+}
+
+.mode-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 80px;
+}
+
+.mode-btn:hover {
+    background: rgba(179, 163, 105, 0.1);
+    color: var(--gt-light-gold);
+}
+
+.mode-btn.active {
+    background: var(--gt-gold);
+    color: var(--gt-navy);
+    font-weight: 600;
+}
+
+.mode-btn.active:hover {
+    background: var(--gt-light-gold);
+    color: var(--gt-navy);
 }
 
 @media (max-width: 768px) {

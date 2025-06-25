@@ -2,21 +2,83 @@
   <div class="container">
     <h1>
       IEEE 754 Floating Point Visualizer
-      <span class="gt-badge">GT</span>
     </h1>
     
     <div class="input-section">
       <div class="input-group">
         <div class="input-label">
-          <label for="numberInput">Binary Input</label>
+          <label for="numberInput">
+            {{ inputMode === 'binary' ? 'Binary Input' : 'Decimal Input' }}
+            <button 
+              class="help-btn" 
+              @click="showHelp = !showHelp"
+              type="button"
+              title="Show input format help"
+            >
+              ?
+            </button>
+          </label>
           <input 
             type="text" 
             id="numberInput" 
             v-model="inputValue"
-            placeholder="e.g., 100.001, inf, -inf, nan"
-            pattern="[01.]*"
-            @input="updateVisualization"
+            :placeholder="inputMode === 'binary' ? 'e.g., 100.001, inf, -inf, nan' : 'e.g., -5.25, 123.456, inf, -inf, nan'"
+            @input="handleInput"
+            @keypress="handleKeypress"
           >
+        </div>
+        <div class="mode-toggle">
+          <button 
+            class="mode-btn" 
+            :class="{ active: inputMode === 'binary' }"
+            @click="setInputMode('binary')"
+          >
+            Binary
+          </button>
+          <button 
+            class="mode-btn" 
+            :class="{ active: inputMode === 'decimal' }"
+            @click="setInputMode('decimal')"
+          >
+            Decimal
+          </button>
+        </div>
+      </div>
+      
+      <!-- Help Popup -->
+      <div v-if="showHelp" class="help-popup">
+        <div class="help-header">
+          <h4>Input Format Guide</h4>
+          <button class="close-btn" @click="showHelp = false">×</button>
+        </div>
+        <div class="help-content">
+          <div class="help-section">
+            <h5>Binary Numbers</h5>
+            <ul>
+              <li><code>101</code> - Integer binary (5 in decimal)</li>
+              <li><code>101.11</code> - Binary with fractional part (5.75 in decimal)</li>
+              <li><code>1100011000000</code> - Long binary integer</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h5>Decimal Numbers</h5>
+            <ul>
+              <li><code>5.25</code> - Positive decimal</li>
+              <li><code>-5.25</code> - Negative decimal</li>
+              <li><code>123.456</code> - Any decimal number</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h5>Special IEEE 754 Values</h5>
+            <ul>
+              <li><code>inf</code> or <code>infinity</code> - Positive infinity</li>
+              <li><code>-inf</code> or <code>-infinity</code> - Negative infinity</li>
+              <li><code>nan</code> - Not a Number</li>
+            </ul>
+          </div>
+          
         </div>
       </div>
     </div>
@@ -34,6 +96,8 @@ export default {
     const inputValue = ref('100.001')
     const visualizationHtml = ref('')
     const currentFormat = ref(32)
+    const showHelp = ref(false)
+    const inputMode = ref('binary') // 'binary' or 'decimal'
 
     const parseSpecialInput = (str) => {
       const s = str.trim().toLowerCase()
@@ -172,7 +236,6 @@ export default {
       
       return `
         <div class="ieee-representation">
-          <h3>32-bit IEEE 754 Binary Representation</h3>
           
           <div style="margin-bottom: 24px; text-align: center;">
             <div style="font-size: 1.1rem; color: var(--gt-light-gold); margin-bottom: 8px;">
@@ -234,6 +297,101 @@ export default {
       `
     }
 
+    const handleKeypress = (event) => {
+      // Allow control keys (backspace, delete, arrow keys, etc.)
+      if (event.ctrlKey || event.metaKey || 
+          ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Enter'].includes(event.key)) {
+        return;
+      }
+      
+      const char = event.key;
+      const currentValue = event.target.value;
+      const cursorPosition = event.target.selectionStart;
+      
+      if (inputMode.value === 'binary') {
+        // For binary mode, allow only 0, 1, ., -, and special value characters
+        const allowedBinaryChars = /^[01.\-infan]$/i;
+        if (!allowedBinaryChars.test(char)) {
+          event.preventDefault();
+          return;
+        }
+        
+        // Additional validation for binary input
+        if (char === '.') {
+          // Only allow one decimal point
+          if (currentValue.includes('.')) {
+            event.preventDefault();
+            return;
+          }
+        } else if (char === '-') {
+          // Only allow minus at the beginning
+          if (cursorPosition !== 0 || currentValue.includes('-')) {
+            event.preventDefault();
+            return;
+          }
+        }
+      } else {
+        // For decimal mode, allow digits, decimal point, minus sign, and special value characters
+        const allowedDecimalChars = /^[0-9.\-einfan]$/i;
+        if (!allowedDecimalChars.test(char)) {
+          event.preventDefault();
+          return;
+        }
+        
+        // Additional validation for decimal input
+        if (char === '.') {
+          // Only allow one decimal point
+          if (currentValue.includes('.')) {
+            event.preventDefault();
+            return;
+          }
+        } else if (char === '-') {
+          // Only allow minus at the beginning or after 'e' for scientific notation
+          const beforeCursor = currentValue.substring(0, cursorPosition);
+          const lastChar = beforeCursor[beforeCursor.length - 1];
+          if (cursorPosition !== 0 && lastChar !== 'e' && lastChar !== 'E') {
+            event.preventDefault();
+            return;
+          }
+        } else if (char.toLowerCase() === 'e') {
+          // Only allow one 'e' for scientific notation
+          if (currentValue.toLowerCase().includes('e')) {
+            event.preventDefault();
+            return;
+          }
+        }
+      }
+    }
+    
+    const handleInput = (event) => {
+      // Clean up the input value after each input event
+      let value = event.target.value;
+      
+      if (inputMode.value === 'binary') {
+        // Remove any characters that shouldn't be in binary input
+        value = value.replace(/[^01.\-infan]/gi, '');
+      } else {
+        // Remove any characters that shouldn't be in decimal input
+        value = value.replace(/[^0-9.\-einfan]/gi, '');
+      }
+      
+      // Update the input value if it was cleaned
+      if (value !== event.target.value) {
+        inputValue.value = value;
+        // Set cursor position to the end
+        setTimeout(() => {
+          event.target.setSelectionRange(value.length, value.length);
+        }, 0);
+      }
+      
+      updateVisualization();
+    }
+
+    const setInputMode = (mode) => {
+      inputMode.value = mode
+      updateVisualization()
+    }
+
     const updateVisualization = () => {
       const special = parseSpecialInput(inputValue.value)
 
@@ -242,22 +400,52 @@ export default {
         return
       }
 
-      const binaryString = inputValue.value.replace(/[^01.]/g, '')
-      if (!binaryString || !isValidBinary(binaryString)) {
-        visualizationHtml.value = `
-          <div class="calc-section" style="text-align: center; background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.1)); border: 1px solid rgba(220, 38, 38, 0.3);">
-            <div class="calc-title" style="color: #FCA5A5;">⚠ Invalid Input</div>
-            <div style="color: var(--text-secondary); margin-top: 12px;">
-              Please enter a valid binary number (0s, 1s, decimal point)<br>
-              or special values: <code style="color: var(--gt-gold);">inf</code>, <code style="color: var(--gt-gold);">-inf</code>, <code style="color: var(--gt-gold);">nan</code>
+      if (inputMode.value === 'decimal') {
+        // In decimal mode, try to parse as decimal number
+        const decimalMatch = inputValue.value.trim().match(/^-?\d+(\.\d+)?$/)
+        if (decimalMatch) {
+          const decimalNumber = parseFloat(inputValue.value)
+          visualizationHtml.value = generateFloat32Visualization(decimalNumber, `${inputValue.value} (decimal)`)
+          return
+        } else if (inputValue.value.trim() !== '') {
+          // Invalid decimal input
+          visualizationHtml.value = `
+            <div class="calc-section" style="text-align: center; background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.1)); border: 1px solid rgba(220, 38, 38, 0.3);">
+              <div class="calc-title" style="color: #FCA5A5;">⚠ Invalid Decimal Input</div>
+              <div style="color: var(--text-secondary); margin-top: 12px;">
+                Please enter a valid decimal number: <code style="color: var(--gt-gold);">-5.25</code>, <code style="color: var(--gt-gold);">123.456</code><br>
+                or special values: <code style="color: var(--gt-gold);">inf</code>, <code style="color: var(--gt-gold);">-inf</code>, <code style="color: var(--gt-gold);">nan</code>
+              </div>
             </div>
-          </div>
-        `
-        return
+          `
+          return
+        }
+      } else {
+        // In binary mode, parse as binary
+        const binaryString = inputValue.value.replace(/[^01.]/g, '')
+        if (binaryString && isValidBinary(binaryString)) {
+          const number = binaryToDecimal(binaryString)
+          visualizationHtml.value = generateFloat32Visualization(number, binaryString)
+          return
+        } else if (inputValue.value.trim() !== '') {
+          // Invalid binary input
+          visualizationHtml.value = `
+            <div class="calc-section" style="text-align: center; background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.1)); border: 1px solid rgba(220, 38, 38, 0.3);">
+              <div class="calc-title" style="color: #FCA5A5;">⚠ Invalid Binary Input</div>
+              <div style="color: var(--text-secondary); margin-top: 12px;">
+                Please enter a valid binary number: <code style="color: var(--gt-gold);">100.001</code>, <code style="color: var(--gt-gold);">1101</code><br>
+                or special values: <code style="color: var(--gt-gold);">inf</code>, <code style="color: var(--gt-gold);">-inf</code>, <code style="color: var(--gt-gold);">nan</code>
+              </div>
+            </div>
+          `
+          return
+        }
       }
       
-      const number = binaryToDecimal(binaryString)
-      visualizationHtml.value = generateFloat32Visualization(number, binaryString)
+      // Empty input
+      if (inputValue.value.trim() === '') {
+        visualizationHtml.value = ''
+      }
     }
 
     onMounted(() => {
@@ -267,7 +455,12 @@ export default {
     return {
       inputValue,
       visualizationHtml,
-      updateVisualization
+      updateVisualization,
+      showHelp,
+      inputMode,
+      setInputMode,
+      handleKeypress,
+      handleInput
     }
   }
 }
